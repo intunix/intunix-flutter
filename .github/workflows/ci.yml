@@ -32,6 +32,6 @@ jobs:
         run: |
           set -o pipefail
           flutter build ios --simulator --debug 2>&1 | tee "$RUNNER_TEMP/ios.log" || {
-            grep -E "error:|Error " "$RUNNER_TEMP/ios.log" | head -n 30 | while read -r l; do echo "::error::$l"; done
+            grep -E -A6 "error:|Error " "$RUNNER_TEMP/ios.log" | head -n 40 | while read -r l; do [ -n "$l" ] && echo "::error::$l"; done
             exit 1
           }
