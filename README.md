@@ -10,10 +10,8 @@ Android 7.0+ (API 24) · iOS 15+
 
 ## Install
 
-```yaml
-dependencies:
-  intunix_flutter:
-    git: https://github.com/intunix/intunix-flutter
+```bash
+flutter pub add intunix_flutter
 ```
 
 **iOS** uses Swift Package Manager (the iOS SDK is published there):
