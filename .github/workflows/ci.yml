@@ -23,12 +23,15 @@ jobs:
   ios:
     runs-on: macos-15
     steps:
+      # The folder must be named like the plugin: Swift Package Manager takes a local
+      # package's identity from its directory name.
       - uses: actions/checkout@v4
+        with: { path: intunix_flutter }
       - uses: subosito/flutter-action@v2
         with: { channel: stable }
       - run: flutter config --enable-swift-package-manager
       - name: Build the example for the iOS simulator
-        working-directory: example
+        working-directory: intunix_flutter/example
         run: |
           set -o pipefail
           flutter build ios --simulator --debug 2>&1 | tee "$RUNNER_TEMP/ios.log" || {
