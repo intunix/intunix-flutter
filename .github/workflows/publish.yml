@@ -1,0 +1,27 @@
+name: Publish to pub.dev
+
+# Publishes on a version tag (e.g. 1.5.7) using pub.dev's GitHub OIDC trust; no secret needed.
+# One-time setup on pub.dev: package Admin → Automated publishing → enable GitHub Actions,
+# repository intunix/intunix-flutter, tag pattern {{version}}.
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # pub.dev verifies the workflow through GitHub's OIDC token
+    environment: pub.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1   # configures the OIDC credentials for `pub publish`
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - name: Tag matches pubspec
+        run: |
+          ver=$(grep -E '^version:' pubspec.yaml | awk '{print $2}')
+          [ "$ver" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME but pubspec says $ver"; exit 1; }
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter pub publish --force
