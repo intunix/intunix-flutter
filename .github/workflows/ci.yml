@@ -38,3 +38,33 @@ jobs:
             grep -E -A6 "error:|Error " "$RUNNER_TEMP/ios.log" | head -n 40 | while read -r l; do [ -n "$l" ] && echo "::error::$l"; done
             exit 1
           }
+
+  # A fresh app installing the plugin the way users do (git dependency), to prove the iOS
+  # Swift package resolves from the pub cache, not just from this checkout.
+  consumer-git:
+    if: github.event_name == 'push'
+    runs-on: macos-15
+    steps:
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: flutter config --enable-swift-package-manager
+      - name: Create an app that depends on this commit
+        run: |
+          flutter create --platforms=ios,android consumer
+          cd consumer
+          sed -i '' 's/^dependencies:/dependencies:\n  intunix_flutter: any/' pubspec.yaml
+          cat >> pubspec.yaml <<YAML
+          dependency_overrides:
+            intunix_flutter:
+              git:
+                url: https://github.com/${{ github.repository }}
+                ref: ${{ github.sha }}
+          YAML
+          flutter pub get
+      - name: Build it for the iOS simulator
+        working-directory: consumer
+        run: |
+          flutter build ios --simulator --debug > "$RUNNER_TEMP/c.log" 2>&1 || {
+            grep -E -A6 "error:|Error " "$RUNNER_TEMP/c.log" | head -n 40 | while read -r l; do [ -n "$l" ] && echo "::error::$l"; done
+            exit 1
+          }
