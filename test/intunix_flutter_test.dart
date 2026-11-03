@@ -29,7 +29,16 @@ void main() {
       'screenTriggerDelayMs': 600,
       'disableEventApi': false,
       'debug': false,
+      'theme': 'auto',
     });
+  });
+
+  test('theme goes through init and setTheme', () async {
+    await Intunix.initialize('ck_1', options: const IntunixOptions(theme: IntunixTheme.dark));
+    await Intunix.setTheme(IntunixTheme.light);
+    expect((calls[0].arguments as Map)['options']['theme'], 'dark');
+    expect(calls[1].method, 'setTheme');
+    expect(calls[1].arguments, {'theme': 'light'});
   });
 
   test('each call maps to its native method and arguments', () async {

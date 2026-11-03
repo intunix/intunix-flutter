@@ -6,6 +6,7 @@ import android.view.View
 import com.intunix.sdk.Intunix
 import com.intunix.sdk.IntunixFormView
 import com.intunix.sdk.IntunixOptions
+import com.intunix.sdk.IntunixTheme
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -43,6 +44,7 @@ class IntunixFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Act
                     screenTriggerDelayMs = (o["screenTriggerDelayMs"] as? Number)?.toLong() ?: 600,
                     disableEventApi = o["disableEventApi"] as? Boolean ?: false,
                     debug = o["debug"] as? Boolean ?: false,
+                    theme = theme(o["theme"] as? String) ?: IntunixTheme.Auto,
                 )
                 Intunix.init(activity ?: appContext, call.argument<String>("apiKey").orEmpty(), options)
             }
@@ -54,6 +56,7 @@ class IntunixFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Act
             "showForm" -> Intunix.showForm(call.argument<String>("form").orEmpty(), call.map("context"))
             "register" -> Intunix.register(call.argument<String>("form").orEmpty())
             "unregister" -> Intunix.unregister(call.argument<String>("form").orEmpty())
+            "setTheme" -> theme(call.argument<String>("theme"))?.let { Intunix.setTheme(it) }
             else -> return result.notImplemented()
         }
         result.success(null)
@@ -68,6 +71,9 @@ class IntunixFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Act
     override fun onDetachedFromActivityForConfigChanges() { activity = null }
     override fun onDetachedFromActivity() { activity = null }
 }
+
+/** 'auto' | 'light' | 'dark' → IntunixTheme; anything else → null. */
+private fun theme(s: String?): IntunixTheme? = IntunixTheme.values().firstOrNull { it.name.equals(s, ignoreCase = true) }
 
 @Suppress("UNCHECKED_CAST")
 private fun MethodCall.map(key: String): Map<String, Any?>? =
@@ -84,10 +90,23 @@ private class FormPlatformView(context: Context, id: Int, args: Map<*, *>?, mess
     private val view = IntunixFormView(context).apply {
         onHeightChanged = { px -> events.invokeMethod("height", (px / density).toDouble().coerceAtLeast(1.0)) }
         onFinished = { events.invokeMethod("finished", null) }
+        theme = theme(args?.get("theme") as? String)
+        hostDark = args?.get("hostDark") as? Boolean
         @Suppress("UNCHECKED_CAST")
         setForm(args?.get("form") as? String, (args?.get("context") as? Map<Any?, Any?>)?.entries?.associate { (k, v) -> k.toString() to v })
     }
 
+    init {
+        // Dart sends the app's brightness and the theme prop again whenever they change.
+        events.setMethodCallHandler { call, result ->
+            if (call.method == "theme") {
+                view.theme = theme(call.argument<String>("theme"))
+                view.hostDark = call.argument<Boolean>("hostDark")
+                result.success(null)
+            } else result.notImplemented()
+        }
+    }
+
     override fun getView(): View = view
-    override fun dispose() {}
+    override fun dispose() { events.setMethodCallHandler(null) }
 }
