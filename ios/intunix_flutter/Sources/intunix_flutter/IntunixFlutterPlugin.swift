@@ -25,7 +25,8 @@ public class IntunixFlutterPlugin: NSObject, FlutterPlugin {
                 maxQueueSize: (o["maxQueueSize"] as? NSNumber)?.intValue ?? 100,
                 screenTriggerDelayMs: UInt64((o["screenTriggerDelayMs"] as? NSNumber)?.intValue ?? 600),
                 disableEventApi: o["disableEventApi"] as? Bool ?? false,
-                debug: o["debug"] as? Bool ?? false))
+                debug: o["debug"] as? Bool ?? false,
+                theme: (o["theme"] as? String).flatMap(IntunixTheme.init(rawValue:)) ?? .auto))
         case "identify": Intunix.identify(a["userId"] as? String ?? "", traits: map("traits") ?? [:])
         case "reset": Intunix.reset()
         case "track": Intunix.track(a["event"] as? String ?? "", properties: map("properties") ?? [:])
@@ -34,6 +35,7 @@ public class IntunixFlutterPlugin: NSObject, FlutterPlugin {
         case "showForm": Intunix.showForm(form, context: map("context"))
         case "register": Intunix.register(form)
         case "unregister": Intunix.unregister(form)
+        case "setTheme": if let t = (a["theme"] as? String).flatMap(IntunixTheme.init(rawValue:)) { Intunix.setTheme(t) }
         default: return result(FlutterMethodNotImplemented)
         }
         result(nil)
@@ -61,7 +63,24 @@ private final class FormPlatformView: NSObject, FlutterPlatformView {
         super.init()
         form.onHeightChanged = { [weak self] h in self?.events.invokeMethod("height", arguments: Double(max(h, 1))) }
         form.onFinished = { [weak self] in self?.events.invokeMethod("finished", arguments: nil) }
+        applyTheme(args ?? [:])
         form.setForm(args?["form"] as? String ?? "", context: args?["context"] as? [String: Any])
+        // Dart sends the app's brightness and the theme prop again whenever they change.
+        events.setMethodCallHandler { [weak self] call, result in
+            guard call.method == "theme" else { return result(FlutterMethodNotImplemented) }
+            self?.applyTheme(call.arguments as? [String: Any] ?? [:])
+            result(nil)
+        }
+    }
+
+    /// The Flutter app's brightness becomes the view's interface style, which the form reads in auto.
+    private func applyTheme(_ a: [String: Any]) {
+        form.theme = (a["theme"] as? String).flatMap(IntunixTheme.init(rawValue:))
+        switch a["hostDark"] as? Bool {
+        case true?: form.overrideUserInterfaceStyle = .dark
+        case false?: form.overrideUserInterfaceStyle = .light
+        case nil: form.overrideUserInterfaceStyle = .unspecified
+        }
     }
 
     func view() -> UIView { form }

@@ -3,9 +3,13 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart' show Theme;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+/// Light or dark forms. [auto] follows the console lock, else the app.
+enum IntunixTheme { auto, light, dark }
 
 /// Options for [Intunix.initialize]. Names follow the web and native SDKs.
 @immutable
@@ -19,6 +23,7 @@ class IntunixOptions {
     this.screenTriggerDelayMs = 600,
     this.disableEventApi = false,
     this.debug = false,
+    this.theme = IntunixTheme.auto,
   });
 
   /// API origin. Leave as is unless Intunix gave you another host.
@@ -41,6 +46,9 @@ class IntunixOptions {
   /// Native SDK logs (Logcat / Xcode console).
   final bool debug;
 
+  /// Dark mode override; change later with [Intunix.setTheme]. It beats the console lock.
+  final IntunixTheme theme;
+
   Map<String, Object?> toMap() => {
         'apiHost': apiHost,
         'register': register,
@@ -50,6 +58,7 @@ class IntunixOptions {
         'screenTriggerDelayMs': screenTriggerDelayMs,
         'disableEventApi': disableEventApi,
         'debug': debug,
+        'theme': theme.name,
       };
 }
 
@@ -58,7 +67,7 @@ class Intunix {
   Intunix._();
 
   /// Version of this plugin (the native SDKs it bundles share it).
-  static const version = '1.5.6';
+  static const version = '1.6.0';
 
   @visibleForTesting
   static const channel = MethodChannel('intunix');
@@ -93,12 +102,18 @@ class Intunix {
   static Future<void> register(String idOrSlug) => channel.invokeMethod('register', {'form': idOrSlug});
 
   static Future<void> unregister(String idOrSlug) => channel.invokeMethod('unregister', {'form': idOrSlug});
+
+  /// Force light or dark forms, or [IntunixTheme.auto]. Open forms switch at once; beats the console lock.
+  ///
+  /// Popup forms follow the phone's or the native app's setting in auto; if your app forces
+  /// a theme in Dart (`themeMode`), call this with the same choice.
+  static Future<void> setTheme(IntunixTheme theme) => channel.invokeMethod('setTheme', {'theme': theme.name});
 }
 
 /// A form placed in your own layout (the web SDK's inline form). Takes the form's height,
 /// draws nothing until it loads, and collapses once the visitor is done.
 class IntunixForm extends StatefulWidget {
-  const IntunixForm({super.key, required this.form, this.context, this.onFinished});
+  const IntunixForm({super.key, required this.form, this.context, this.onFinished, this.theme});
 
   /// Form id or slug.
   final String form;
@@ -109,6 +124,9 @@ class IntunixForm extends StatefulWidget {
   /// Called once the visitor submits or closes the form.
   final VoidCallback? onFinished;
 
+  /// Light/dark for this form; null = [Intunix.setTheme], the console lock, then the app's [Theme].
+  final IntunixTheme? theme;
+
   @override
   State<IntunixForm> createState() => _IntunixFormState();
 }
@@ -118,8 +136,26 @@ class _IntunixFormState extends State<IntunixForm> {
   // A platform view needs a non-zero size before it can measure its content.
   double _height = 1;
   MethodChannel? _events;
+  Map<String, Object?>? _sentTheme;
+
+  /// The theme args for the native view: the explicit theme, and whether the app's
+  /// [Theme] is dark (null when the app has no Material theme; native reads the app then).
+  Map<String, Object?> _themeArgs(BuildContext context) {
+    final hasTheme = context.findAncestorWidgetOfExactType<Theme>() != null;
+    return {
+      'theme': widget.theme?.name,
+      'hostDark': hasTheme ? Theme.of(context).brightness == Brightness.dark : null,
+    };
+  }
+
+  void _sendTheme(Map<String, Object?> args) {
+    if (_events == null || mapEquals(args, _sentTheme)) return;
+    _sentTheme = args;
+    _events!.invokeMethod('theme', args);
+  }
 
   void _onCreated(int id) {
+    _sentTheme = _lastTheme; // sent as creation params
     _events = MethodChannel('intunix/form_$id')
       ..setMethodCallHandler((call) async {
         if (!mounted) return;
@@ -139,9 +175,15 @@ class _IntunixFormState extends State<IntunixForm> {
     super.dispose();
   }
 
+  Map<String, Object?>? _lastTheme;
+
   @override
   Widget build(BuildContext context) {
-    final params = {'form': widget.form, 'context': widget.context};
+    final theme = _themeArgs(context);
+    _lastTheme = theme;
+    // Brightness or the theme prop changed after the view exists: tell it.
+    if (_events != null) WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _sendTheme(theme); });
+    final params = {'form': widget.form, 'context': widget.context, ...theme};
     final Widget view;
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Hybrid composition: text input and accessibility behave like a native view.

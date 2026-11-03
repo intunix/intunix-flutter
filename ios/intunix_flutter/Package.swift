@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        .package(url: "https://github.com/intunix/intunix-ios", from: "1.5.6"),
+        .package(url: "https://github.com/intunix/intunix-ios", from: "1.6.0"),
     ],
     targets: [
         .target(

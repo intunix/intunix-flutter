@@ -49,3 +49,18 @@ IntunixForm(form: 'post-order', onFinished: () => setState(() => done = true))
 ```
 
 Options, triggers and what is sent are the same as the native SDKs — see their READMEs.
+### Dark mode
+
+Forms follow your app. An inline `IntunixForm` uses the brightness of your `Theme`.
+A popup form follows the phone's setting. Each form can also be locked to light or
+dark in the console. To override from code (code wins over the console):
+
+```dart
+Intunix.initialize('ck_your_client_key', options: const IntunixOptions(theme: IntunixTheme.auto));
+Intunix.setTheme(IntunixTheme.dark);           // e.g. when your app's themeMode changes
+IntunixForm(form: 'post-order', theme: IntunixTheme.light);
+```
+
+If your app forces a theme in Dart (`themeMode: ThemeMode.dark`), call `setTheme`
+with the same choice so popups match too.
+
