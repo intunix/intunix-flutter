@@ -1,3 +1,12 @@
+## 1.7.1
+
+Chat fixes. Switching language in a conversational form now re-renders the welcome message,
+the questions already asked (including the one on screen), the completion message and the
+answers to choice questions in the new language; AI follow-up questions and free-text answers
+stay as written, and a half-typed answer is kept. The language switcher sits closer to the
+close button.
+Wraps Intunix Android 1.7.1 and iOS 1.7.1.
+
 ## 1.7.0
 
 Multi-language and conversational forms. A form in two or more languages shows an in-form
