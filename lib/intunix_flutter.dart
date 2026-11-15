@@ -50,7 +50,7 @@ class IntunixOptions {
   /// Dark mode override; change later with [Intunix.setTheme]. It beats the console lock.
   final IntunixTheme theme;
 
-  /// Language code for forms ("bn", "ar", ...); null = the device language, else the form's default.
+  /// Developer default language ("bn", "ar", ...); loses to the respondent's own earlier choice. null = the device language, else the form's default.
   /// Read when a form loads: change it later with [Intunix.setLocale], which does not re-localize forms already loaded.
   final String? locale;
 
