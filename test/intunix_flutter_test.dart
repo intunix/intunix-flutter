@@ -30,7 +30,16 @@ void main() {
       'disableEventApi': false,
       'debug': false,
       'theme': 'auto',
+      'locale': null,
     });
+  });
+
+  test('locale goes through init and setLocale', () async {
+    await Intunix.initialize('ck_1', options: const IntunixOptions(locale: 'bn'));
+    await Intunix.setLocale('ar');
+    expect((calls[0].arguments as Map)['options']['locale'], 'bn');
+    expect(calls[1].method, 'setLocale');
+    expect(calls[1].arguments, {'locale': 'ar'});
   });
 
   test('theme goes through init and setTheme', () async {

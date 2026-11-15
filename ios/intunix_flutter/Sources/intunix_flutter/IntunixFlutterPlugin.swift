@@ -26,7 +26,8 @@ public class IntunixFlutterPlugin: NSObject, FlutterPlugin {
                 screenTriggerDelayMs: UInt64((o["screenTriggerDelayMs"] as? NSNumber)?.intValue ?? 600),
                 disableEventApi: o["disableEventApi"] as? Bool ?? false,
                 debug: o["debug"] as? Bool ?? false,
-                theme: (o["theme"] as? String).flatMap(IntunixTheme.init(rawValue:)) ?? .auto))
+                theme: (o["theme"] as? String).flatMap(IntunixTheme.init(rawValue:)) ?? .auto,
+                locale: o["locale"] as? String))
         case "identify": Intunix.identify(a["userId"] as? String ?? "", traits: map("traits") ?? [:])
         case "reset": Intunix.reset()
         case "track": Intunix.track(a["event"] as? String ?? "", properties: map("properties") ?? [:])
@@ -36,6 +37,7 @@ public class IntunixFlutterPlugin: NSObject, FlutterPlugin {
         case "register": Intunix.register(form)
         case "unregister": Intunix.unregister(form)
         case "setTheme": if let t = (a["theme"] as? String).flatMap(IntunixTheme.init(rawValue:)) { Intunix.setTheme(t) }
+        case "setLocale": if let l = a["locale"] as? String { Intunix.setLocale(l) }
         default: return result(FlutterMethodNotImplemented)
         }
         result(nil)
@@ -64,6 +66,7 @@ private final class FormPlatformView: NSObject, FlutterPlatformView {
         form.onHeightChanged = { [weak self] h in self?.events.invokeMethod("height", arguments: Double(max(h, 1))) }
         form.onFinished = { [weak self] in self?.events.invokeMethod("finished", arguments: nil) }
         applyTheme(args ?? [:])
+        form.locale = args?["locale"] as? String
         form.setForm(args?["form"] as? String ?? "", context: args?["context"] as? [String: Any])
         // Dart sends the app's brightness and the theme prop again whenever they change.
         events.setMethodCallHandler { [weak self] call, result in

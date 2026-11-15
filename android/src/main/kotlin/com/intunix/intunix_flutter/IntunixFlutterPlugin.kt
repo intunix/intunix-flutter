@@ -45,6 +45,7 @@ class IntunixFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Act
                     disableEventApi = o["disableEventApi"] as? Boolean ?: false,
                     debug = o["debug"] as? Boolean ?: false,
                     theme = theme(o["theme"] as? String) ?: IntunixTheme.Auto,
+                    locale = o["locale"] as? String,
                 )
                 Intunix.init(activity ?: appContext, call.argument<String>("apiKey").orEmpty(), options)
             }
@@ -57,6 +58,7 @@ class IntunixFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Act
             "register" -> Intunix.register(call.argument<String>("form").orEmpty())
             "unregister" -> Intunix.unregister(call.argument<String>("form").orEmpty())
             "setTheme" -> theme(call.argument<String>("theme"))?.let { Intunix.setTheme(it) }
+            "setLocale" -> call.argument<String>("locale")?.let { Intunix.setLocale(it) }
             else -> return result.notImplemented()
         }
         result.success(null)
@@ -92,6 +94,7 @@ private class FormPlatformView(context: Context, id: Int, args: Map<*, *>?, mess
         onFinished = { events.invokeMethod("finished", null) }
         theme = theme(args?.get("theme") as? String)
         hostDark = args?.get("hostDark") as? Boolean
+        locale = args?.get("locale") as? String
         @Suppress("UNCHECKED_CAST")
         setForm(args?.get("form") as? String, (args?.get("context") as? Map<Any?, Any?>)?.entries?.associate { (k, v) -> k.toString() to v })
     }

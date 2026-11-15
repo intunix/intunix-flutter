@@ -24,6 +24,7 @@ class IntunixOptions {
     this.disableEventApi = false,
     this.debug = false,
     this.theme = IntunixTheme.auto,
+    this.locale,
   });
 
   /// API origin. Leave as is unless Intunix gave you another host.
@@ -49,6 +50,10 @@ class IntunixOptions {
   /// Dark mode override; change later with [Intunix.setTheme]. It beats the console lock.
   final IntunixTheme theme;
 
+  /// Language code for forms ("bn", "ar", ...); null = the device language, else the form's default.
+  /// Read when a form loads: change it later with [Intunix.setLocale], which does not re-localize forms already loaded.
+  final String? locale;
+
   Map<String, Object?> toMap() => {
         'apiHost': apiHost,
         'register': register,
@@ -59,6 +64,7 @@ class IntunixOptions {
         'disableEventApi': disableEventApi,
         'debug': debug,
         'theme': theme.name,
+        'locale': locale,
       };
 }
 
@@ -108,12 +114,15 @@ class Intunix {
   /// Popup forms follow the phone's or the native app's setting in auto; if your app forces
   /// a theme in Dart (`themeMode`), call this with the same choice.
   static Future<void> setTheme(IntunixTheme theme) => channel.invokeMethod('setTheme', {'theme': theme.name});
+
+  /// Language code for forms loaded from now on ("bn", "ar", ...). Forms already loaded keep their language.
+  static Future<void> setLocale(String code) => channel.invokeMethod('setLocale', {'locale': code});
 }
 
 /// A form placed in your own layout (the web SDK's inline form). Takes the form's height,
 /// draws nothing until it loads, and collapses once the visitor is done.
 class IntunixForm extends StatefulWidget {
-  const IntunixForm({super.key, required this.form, this.context, this.onFinished, this.theme});
+  const IntunixForm({super.key, required this.form, this.context, this.onFinished, this.theme, this.locale});
 
   /// Form id or slug.
   final String form;
@@ -126,6 +135,9 @@ class IntunixForm extends StatefulWidget {
 
   /// Light/dark for this form; null = [Intunix.setTheme], the console lock, then the app's [Theme].
   final IntunixTheme? theme;
+
+  /// Language code for this form; null = [Intunix.setLocale] / [IntunixOptions.locale]. Read when the form loads.
+  final String? locale;
 
   @override
   State<IntunixForm> createState() => _IntunixFormState();
@@ -183,7 +195,7 @@ class _IntunixFormState extends State<IntunixForm> {
     _lastTheme = theme;
     // Brightness or the theme prop changed after the view exists: tell it.
     if (_events != null) WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _sendTheme(theme); });
-    final params = {'form': widget.form, 'context': widget.context, ...theme};
+    final params = {'form': widget.form, 'context': widget.context, 'locale': widget.locale, ...theme};
     final Widget view;
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Hybrid composition: text input and accessibility behave like a native view.
