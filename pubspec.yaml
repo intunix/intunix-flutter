@@ -1,6 +1,6 @@
 name: intunix_flutter
 description: "Intunix feedback forms (NPS, CSAT, CES, ratings, follow-ups) in Flutter apps, using the native Intunix Android and iOS SDKs."
-version: 1.7.1
+version: 1.7.2
 homepage: https://intunix.com
 repository: https://github.com/intunix/intunix-flutter
 

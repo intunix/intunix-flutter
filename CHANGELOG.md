@@ -1,3 +1,10 @@
+## 1.7.2
+
+The conversational form has one scroll area: in a modal, popup or on a short screen the chat log
+takes the remaining height instead of scrolling inside a scrolling card.
+
+Wraps Intunix Android 1.7.2 and iOS 1.7.2.
+
 ## 1.7.1
 
 Chat fixes. Switching language in a conversational form now re-renders the welcome message,
