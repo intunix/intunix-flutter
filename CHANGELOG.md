@@ -1,3 +1,9 @@
+## 1.7.3
+
+A banner or popup stays open when the user taps outside it; only a modal closes on an outside tap.
+
+Wraps Intunix Android 1.7.3 and iOS 1.7.3.
+
 ## 1.7.2
 
 The conversational form has one scroll area: in a modal, popup or on a short screen the chat log

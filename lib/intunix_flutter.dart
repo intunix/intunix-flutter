@@ -73,7 +73,7 @@ class Intunix {
   Intunix._();
 
   /// Version of this plugin (the native SDKs it bundles share it).
-  static const version = '1.7.2';
+  static const version = '1.7.3';
 
   @visibleForTesting
   static const channel = MethodChannel('intunix');

@@ -1,5 +1,5 @@
 group = "com.intunix.intunix_flutter"
-version = "1.7.2"
+version = "1.7.3"
 
 buildscript {
     val kotlinVersion = "2.4.0"
@@ -62,5 +62,5 @@ kotlin {
 }
 
 dependencies {
-    implementation("com.github.intunix:intunix-android:1.7.2")
+    implementation("com.github.intunix:intunix-android:1.7.3")
 }
